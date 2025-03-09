@@ -24,7 +24,8 @@ sudo apt install git
 `git command_name -h` - справочная информация о команде\
 `git help command_name` - подробная информация
 
-Чтобы в командном приветствии была видна информация о `git`:
+Чтобы в командном приветствии была видна информация о `git`:\
+[git completion](https://github.com/git/git/blob/master/contrib/completion/git-prompt.sh)
 ```
 bash: bash-git-prompt
 zsh: oh-my-zsh
@@ -80,6 +81,8 @@ powershell: posh-git
 `git config alias.sayhi '!echo "hello"; echo "from git"'`\
 `git sayhi`\
 `git config --global alias.commitall '!git add .;git commit'`
+
+`git config --global alias.graph 'log --oneline --decorate --graph --all'`
 
 `git config --global alias.commitall '!git add A;git commit'`
 
@@ -337,7 +340,6 @@ main -- c1 -- c2 -- c3 -- c5 --- c7 ------ c11
 - `release-*` - only bug fixes
 - `hotfix-*` - branch to distribute hotfixes
 - `feature` - branch off from the `develop` branch
-
 ![](git-model@2x.png)
 
 ### Практика
@@ -772,7 +774,7 @@ gc.reflogExpireUnreachable="30 days ago"
 `git reflog` - ищем соответствующий коммит (н-р последний перед `checkout: moving from feature to master`)\
 `git branch feature HEAD@{6}` / под windows: `git branch feature 'HEAD@{6}'`
 
-### Визуализация коммитов
+### git show, git graph - визуализация коммитов
 
 Расширение для VS Code\
 `git log`\
@@ -821,7 +823,6 @@ gc.reflogExpireUnreachable="30 days ago"
 `git clean -x` удаление всего что и в .gitignore\
 `git clean -f`\
 `git clean -dxf`
-
 
 ## Reset
 Отмена нескольких коммитов.\
@@ -1100,6 +1101,7 @@ git gui (to show list of gui for graph)
 `git merge feature`
 
 https://git-scm.com/docs/git-merge
+https://git-scm.com/docs/merge-strategies
 
 ### fast forward merge
 Слияние перемоткой - просто перемещаем master на feature (коммиты в feature становятся коммитами master), если коммитов в master не было.
@@ -1148,7 +1150,7 @@ feature ->  2c11      |
 ```
 Чтобы fast forward никогда не происходило:\
 `git config merge.ff false`\
-`git config branch.master.mergeoptions '--no-ff'`\
+`git config --global branch.master.mergeoptions '--no-ff'`\
 Чтобы вернуть возможность ff `git merge --ff feature`
 
 ### merge
@@ -1193,7 +1195,7 @@ $ cat .git/MERGE_HEAD
     <link type="text/css" rel="stylesheet" media="all" href="style.css" />
 =======
     <title>Hello World Page</title>
->>>>>>> main:hello.html
+>>>>>>> feature:index.html
   </head>
   <body>
     <h1>Hello, World!</h1>
@@ -1441,7 +1443,6 @@ $ git reset --hard @~
 
 `git commit -m 'fix'`
 
-
 Сжимает все изменения в один коммит и скрывает историю изменений.
 
 `git branch -D fix` (удаляем ветку `fix`)
@@ -1516,10 +1517,9 @@ cherry-pick - очередной случай, когда автор комми�
 То же в документации:\
 https://git-scm.com/docs/git-rebase
 
-**Никогда не делайте rebase**\
+### Никогда не делайте rebase
 Точнее делайте.\
 Но если ветка публичная - не делайте (у второго разработчика из-под ветки незаметно уедет фундамент).
-
 
 `git rebase master feature`
 
@@ -1633,3 +1633,375 @@ feature ->  E'
 ### rebase с тестами, rebase -x
 Вызывать команду (н-р тесты) после каждого скопированного коммита. Удобно для проверки на потенциальные семантические конфликты и другие ошибки слияния.\
 `git rebase -x ... master`
+
+`git rebase -x 'python3 feature.py' master`
+
+Будет при переносе каждого коммита запускать тесты (в данном случае команду `python3 feature.py`).
+
+Когда встретили ошибку:
+1. Исправляем ошибку в файле
+    `vim feature.py`
+2. Добавляем изменения в индекс
+    `git add feature.py`
+3. Заменяем последний коммит на исправленный
+    `git commit --amend --no-edit`
+4. Продолжаем `rebase`
+    `git rebase --continue`
+
+**Пример**
+
+```
+                            D <- master
+                            | "Rename say() -> sayHi()"
+HEAD -> feature -> C        |
+      "Use say()"  |        |
+                   |        |
+                   B        |
+                      \     |
+                         \  |
+                            A "Create say()"
+```
+
+`lib.py [A]`
+```python
+def say():
+    print('Hello!')
+```
+
+`feature.py [C]`
+```python
+from lib import *
+
+say()
+```
+
+`lib.py [D]`
+```python
+def sayHi():
+    print('Hello!')
+```
+
+При `rebase`:
+```sh
+$ git switch feature
+$ git rebase master
+```
+
+```
+# lib.py
+def sayHi():
+    print('Hello!')
+
+# feature.py
+from lib import *
+
+say()
+```
+
+```sh
+$ python3 feature.py
+Traceback (most recent call last):
+  File "/.../feature.py", line 3, in <module>
+    say()
+NameError: name 'say' is not defined
+```
+
+```sh
+git reset --hard ORIG_HEAD
+```
+
+```sh
+git rebase -x 'python3 feature.py' master
+```
+
+```sh
+git rebase -x 'python3 feature.py' main
+Executing: python3 feature.py
+Executing: python3 feature.py
+Traceback (most recent call last):
+  File "/Users/belkovanya/coding/mipt/tp/test-rebase-x-repo/feature.py", line 3, in <module>
+    say()
+NameError: name 'say' is not defined
+warning: execution failed: python3 feature.py
+You can fix the problem, and then run
+
+  git rebase --continue
+
+```
+
+### rebase --onto (перенос части ветки)
+`git rebase --onto master feature`
+
+```
+ HEAD -> fix -> F
+                |
+                |
+                E
+                  \             G <- master
+                     \          |
+             feature -> D       |
+                        |       |
+                        |       B
+                        C       |
+                          \     |
+                             \  |
+                                A
+
+$ git rebase --onto master feature
+
+         HEAD -> fix -> F'
+                        |
+                        |
+                        E'
+                          \
+                             \
+                                G <- master
+                                |
+             feature -> D       |
+                        |       |
+                        |       B
+                        C       |
+                          \     |
+                             \  |
+                                A
+
+```
+
+***Примечание***
+Иногда проще использовать `cherry-pick`
+
+### rebase --rebase-merges, перебазирование слияний
+
+При обычном `rebase` будут пропущены коммиты слияния!\
+Для учёта коммитов слияния:\
+`git rebase --rebase-merges master`\
+Для учёта разрешённых конфликтов слияния:\
+см. `git rerere`
+
+```
+                       G <- master
+                       |
+     feature -> E      |
+                |      F
+                D      |
+             /  |      |
+          /     C      |
+idea -> Y         \    |
+        |            \ |
+        |              B
+        X              |
+           \           |
+               \       |
+                   \   |
+                       A
+
+
+$ git rebase master
+# Коммит слияния пропущен!!
+     feature -> E'
+                |
+                C'
+                |
+                Y'
+                |
+                X'
+                    \
+                       G <- master
+                       |
+                E      |
+                |      F
+                D      |
+             /  |      |
+          /     C      |
+idea -> Y         \    |
+        |            \ |
+        |              B
+        X              |
+           \           |
+               \       |
+                   \   |
+                       A
+
+# Вернём как было
+$ git reset --hard feature@{1}
+```
+
+`git rebase --rebase-merges master`
+```
+                       G <- master
+                       |
+     feature -> E      |
+                |      F
+                D      |
+             /  |      |
+          /     C      |
+idea -> Y         \    |
+        |            \ |
+        |              B
+        X              |
+           \           |
+               \       |
+                   \   |
+                       A
+
+
+$ git rebase --rebase-merges master
+     feature -> E'
+                |
+                D'
+               /|
+              / C'
+             |     \
+             /         G <- master
+            /          |
+           /    E      |
+          |     |      F
+          /     D      |
+         /   /  |      |
+        / /     C      |
+idea -> Y         \    |
+        |            \ |
+        |              B
+        X              |
+           \           |
+               \       |
+                   \   |
+                       A
+
+# Проблема: в D' повторяется конфликт
+# В такой ситуации смотрим команду 'rerere'
+```
+
+### git rebase --interactive (н-р исправление истории коммитов)
+
+`drop`: по умолчанию при удалении строки коммит учтён не будет.\
+Чтобы это отключить:\
+`git config rebase.missingCommitsCheck warn.error`
+
+Чтобы при переносе на себя копировались все коммиты (без переиспользования):\
+`git rebase --no-ff`
+
+***Пример:***\
+В нашей ветке неопрятные коммиты с непонятными комментариями и много коммитов `fix`.
+
+```
+$ git rebase -i master
+pick c191f90c7 Initial commit
+pick 3050fc0de Fix network bug
+pick 7b1e3f2a2 Update README
+pick 3e4f5d6a7 Commit sensitive data
+pick 9a8b7c6d5 Add new feature
+pick 6d5c4b3a2 Add new feature
+pick 4b3c2d1a0 Update README
+pick 5a6b7c8d9 Update README
+
+# Rebase 795b95f..5a6b7c8d9 onto 795b95f (8 command(s))
+#
+# Commands:
+# p, pick <commit> = use commit
+# r, reword <commit> = use commit, but edit the commit message
+# e, edit <commit> = use commit, but stop for amending
+# s, squash <commit> = use commit, but meld into previous commit
+# f, fixup <commit> = like "squash", but discard this commit's log message
+# x, exec <command> = run command (the rest of the line) using shell
+# d, drop <commit> = remove commit
+#
+# These lines can be re-ordered; they are executed from top to bottom.
+#
+# If you remove a line here THAT COMMIT WILL BE LOST.
+#
+# However, if you remove everything, the rebase will be aborted.
+#
+# Note that empty commits are commented out
+```
+
+В процессе `git rebase -i` (при паузе на изменяемом коммите) можем вызвать\
+`git rebase --edit-todo` чтобы поменять план изменений.
+
+Перед переносом в `master` хотим исправить историю коммитов.
+
+```sh
+git switch
+git rebase -i
+git reset @~
+git add News.md
+```
+
+### git rebase --autosquash исправление коммита посередине ветки
+```
+# Добавляем fix к коммиту 3265
+# Создаёт новый коммит с сообщением "fixup! <Commit 3265 message>"
+$ git commit -a --fixup=3265
+
+$ git rebase -i --autosquash @~4
+# или git config --global rebase.autoSquash true
+
+# Тогда при rebase --autosquash коммиты сольются в один
+```
+
+### Разработка без merge, или git rebase --interactive
+Вместо того, чтобы делать merge - сделаем rebase коммитов из нашей ветки feature наверх ветки master.
+
+В итоге мы исправим конфликты в тех же коммитах, а "альтернативная история" станет основной!
+```
+feature ->  E
+            |
+            D       G <- master
+            |       |
+            C       F
+                \   |
+                    B
+                    |
+                    A
+
+...
+
+
+feature ->  E'
+            |
+            D'
+            |
+            C'
+            |
+            G <- master
+            |
+            F
+            |
+            B
+            |
+            A
+
+...
+
+
+feature ->  E' <- master
+            |
+            D'
+            |
+            C'
+            |
+            G
+            |
+            F
+            |
+            B
+            |
+            A
+
+```
+
+## git revert
+Новый коммит, отменяющий изменения прошлого коммита.
+
+`git revert 1913`
+`git revert A..D`
+
+### git revert с коммитом слияния
+`git revert 38e8`
+```sh
+$ git revert 38e8
+error: commit 38e8 is a merge but no -m option was given
+
+# Указываем с каким родителем учитывать diff
+$ git revert 38e8 -m 1
+```
