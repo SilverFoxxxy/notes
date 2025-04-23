@@ -25,3 +25,12 @@
     - reset
     - cherry-pick
     - rebase
+
+- ## [Системы сборки](cmake.md)
+    - make
+    - cmake
+
+- ## [Google Test](google-test.md)
+
+- ## [Docker](docker.md)
+
