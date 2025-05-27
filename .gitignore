@@ -1,0 +1,12 @@
+dijkstra-a-star/main
+/dijkstra-a-star/build
+*.DS_Store
+*.dSYM*
+/dijkstra-a-star/path_dump
+dijkstra-a-star/test.cpp
+dijkstra-a-star/test.h
+dijkstra-a-star/tmp.png
+dtsp/package-lock.json
+dtsp/package.json
+*.ipynb_checkpoints
+/.vscode
