@@ -2,6 +2,8 @@
 
 using namespace std;
 
+typedef long long ll;
+
 struct Item {
     int id;
     int dx, dy, dz;
@@ -41,6 +43,13 @@ bool has_collision_by_coord(int ax, int adx, int bx, int bdx) {
     return l < r;
 }
 
+ll get_collision_by_coord(int ax, int adx, int bx, int bdx) {
+    int l = max(ax, bx);
+    int r = min(ax + adx, bx + bdx);
+
+    return (l < r) * (r - l);
+}
+
 bool has_collision(const Item& a, const Point& pos_a, const Item& b, const Point& pos_b) {
     if (has_collision_by_coord(pos_a.x, a.dx, pos_b.x, b.dx) &&
         has_collision_by_coord(pos_a.y, a.dy, pos_b.y, b.dy) &&
@@ -48,6 +57,12 @@ bool has_collision(const Item& a, const Point& pos_a, const Item& b, const Point
         return true;
     }
     return false;
+}
+
+ll get_collision_volume(const Item& a, const Point& pos_a, const Item& b, const Point& pos_b) {
+    return 1LL * get_collision_by_coord(a.dx, pos_a.x, b.dx, pos_b.x) *
+                 get_collision_by_coord(a.dy, pos_a.y, b.dy, pos_b.y) *
+                 get_collision_by_coord(a.dz, pos_a.z, b.dz, pos_b.z);
 }
 
 bool check_boundary(const Item& item, const Point& pos, const Item& box) {
