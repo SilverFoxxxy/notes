@@ -23,7 +23,11 @@ def proc(lst, x):
     return res
 ```
 
-#### Решение
+<details>
+
+<summary>Решение</summary>
+
+<!-- #### Решение -->
 ```python
 def filter_multiples(numbers, divisor):
     multiples = []
@@ -32,6 +36,7 @@ def filter_multiples(numbers, divisor):
             multiples.append(number)
     return multiples
 ```
+</details>
 
 ### Пример 2
 Что стоит сделать с этим кодом?
@@ -52,9 +57,16 @@ contains({1, 2, 3}, 5);
 contains({"abra", "cadabra"}, "curse");
 ```
 
-#### Решение
+
+<details>
+
+<summary>Решение</summary>
+
+<!-- #### Решение -->
 Ничего, пока мы не заметим, что он работает медленно!\
 На массивах небольшой длины работает за приемлемое время.
+
+</details>
 
 ### Пример 3
 ```python
@@ -78,12 +90,17 @@ logic = BusinessLogic()
 logic.process_data()
 ```
 
-#### Решение
+<details>
+
+<summary>Решение</summary>
+
+<!-- #### Решение -->
 Видим высокую связность между классами (один класс опирается на внутреннюю реализацию другого).
 
 Упражнение:
 - Добавить поддержку другой базы данных
 - Что если объединить логику в один класс? (нарушит принцип single responsibility)
+</details>
 
 ## Итого:
 Если код менять и поддерживать сложно - пора его переписывать!
