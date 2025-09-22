@@ -50,8 +50,13 @@ public:
     int& operator [](int i) {
         return a[i];
     }
-};
 
+    ~Vector() {
+        if (a) {
+            delete[] a;
+        }
+    }
+};
 
 int main() {
     Vector a;
